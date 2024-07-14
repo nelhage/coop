@@ -202,6 +202,8 @@ Check false. (* `bool` *)
 
 Check bool. (* `Set` *)
 
+Check bool_rect.
+
 (*
   To use a `bool`, we can do case analysis on it. This is called *pattern
   matching*. For example, we can use pattern matching to define a function that
@@ -370,10 +372,43 @@ Compute 1 + 1. (* `2` *)
   1. Define the concept of lists as an inductive data type which is
      parameterized by the element type. Which arguments would you make
      implicit, if any?
+*)
+
+Inductive list (T : Set) :=
+| nil : list T
+| cons : T -> (list T) -> list T.
+
+Arguments cons [_] _.
+
+Compute cons 1 (cons 2 (nil Datatypes.nat)).
+
+(*
   2. Define a function which computes the length of a list as defined in the
      previous question.
+*)
+
+Fixpoint length [T] (l : list T) :=
+  match l with
+  | nil _ => 0
+  | (cons _ tail) => 1 + (length tail)
+  end.
+
+Compute length (cons 1 (cons 2 (nil Datatypes.nat))).
+
+(*
   3. Define a `map` function for lists as defined in the first question,
      analogous to the `map_option` function defined in the lesson.
+*)
+
+Fixpoint map [T U] f (l : list T) :=
+  match l with
+  | nil _ => nil U
+  | cons h tail => cons (f h) (map f tail)
+  end.
+
+Compute map (fun x => x + 1) (cons 1 (cons 2 (nil Datatypes.nat))).
+
+(*
   4. Define a function which compares two natural numbers for equality.
   5. Define multiplication of natural numbers.
   6. Define subtraction of natural numbers. The function should return an
