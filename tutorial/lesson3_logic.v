@@ -293,11 +293,27 @@ Proof.
   reflexivity. (* Equivalent to `apply eq_refl.` *)
 Qed.
 
+Goal forall x : nat, x + 0 = x.
+Proof.
+  intros.
+  simpl.
+Abort.
+
 Definition eq_symmetric A (x y : A) : x = y -> y = x :=
   fun H =>
     match H in _ = z return z = x with
     | eq_refl _ => eq_refl x
     end.
+
+Check eq_symmetric.
+Check eq.
+
+Definition eq_symmetric2 A (x y : A) (H : x = y) : (y = x) :=
+  match H in _ = z return z = x with
+  | eq_refl _ => eq_refl x
+  end.
+
+Check eq_symmetric2.
 
 Goal forall A (x y : A), x = y -> y = x.
 Proof.
@@ -394,6 +410,8 @@ Definition weird f :
       end
     end.
 
+Check weird.
+
 Goal
   forall f,
   (forall x, f (f x) = 1 + x) ->
@@ -405,11 +423,35 @@ Proof.
   reflexivity.
 Qed.
 
+(*
+ Definition succ_eq_imply_eq x y (H : S x = S y) : x = y :=
+   match H in _ = (S b) return x = b with
+   | eq_refl _ =>
+       match S y return x = y with
+       | O => H
+       | S 0 => eq_refl 0
+       | S n => True
+       end
+   end.
+
+
+Goal
+  forall x y, (S x) = (S y) -> x = y.
+Proof.
+  intros.
+  destruct x.
+  - destruct y.
+    * reflexivity.
+    * destruct y.
+
+Abort.
+*)
+
+
 (* *Existential quantification* can be defined as follows: *)
 
 Inductive ex [A : Type] (P : A -> Prop) : Prop :=
   ex_intro : forall x : A, P x -> ex P.
-
 Arguments ex_intro [_ _] _ _.
 
 (*
@@ -422,6 +464,9 @@ Notation "'exists' x .. y , p" := (ex (fun x => .. (ex (fun y => p)) ..))
 
 Definition half_of_6_exists : exists x, 2 * x = 6 :=
   ex_intro 3 (eq_refl 6).
+
+(* Unset Printing Notations. *)
+Check half_of_6_exists.
 
 Goal exists x, 2 * x = 6.
 Proof.
@@ -459,10 +504,110 @@ Qed.
 (*
   1. Prove `forall (A B C : Prop), (A -> B) -> (A -> C) -> A -> B /\ C` both
      manually and using proof mode.
+*)
+
+Definition both_implied_to_implies_both (A B C : Prop):
+  (A -> B) -> (A -> C) -> A -> B /\ C :=
+  fun H1 H2 x =>
+    conj (H1 x) (H2 x).
+
+Check both_implied_to_implies_both.
+
+Goal forall (A B C : Prop), (A -> B) -> (A -> C) -> A -> B /\ C.
+Proof.
+  intros.
+  split.
+  - apply H.
+    apply H1.
+  - apply H0.
+    apply H1.
+Qed.
+
+(*
   2. Prove `forall (A B : Prop), (A /\ B) -> (A \/ B)` both manually and using
      proof mode.
+*)
+
+Definition conjunction_implies_disjunction (A B : Prop) (H : A /\ B) : (A \/ B) :=
+  match H with
+  | conj a b => or_introl a
+  end.
+
+Goal forall (A B : Prop), A /\ B -> A \/ B.
+Proof.
+  intros.
+  left.
+  destruct H.
+  apply H.
+Qed.
+
+(*
   3. Prove `forall A : Prop, ~(A /\ ~A)` both manually and using proof mode.
+*)
+
+Definition noncontradiction (A : Prop) : ~(A /\ ~A) :=
+  fun H =>
+    match H with
+      | conj a not_a => not_a a
+    end.
+
+Check noncontradiction.
+
+Goal forall A : Prop, ~(A /\ ~A).
+Proof.
+  unfold not.
+  intros.
+  destruct H.
+  apply H0.
+  apply H.
+Qed.
+
+(*
+Unset Printing Notations.
+Check ~~~False.
+*)
+
+(*
   4. Prove `forall A : Prop, ~~~A -> ~A` both manually and using proof mode.
+*)
+
+Definition not_not (A: Prop) : A -> ~~A :=
+  fun H H1 =>
+    (* H: A; H1: (A -> False) *)
+    H1 H.
+
+Definition triple_not (A: Prop) : ~~~A -> ~A :=
+  fun H H0 =>
+    H (fun H1 => H1 H0).
+
+Theorem triple_not_2 : forall A : Prop, ~~~A -> ~A.
+Proof.
+  unfold not.
+  intros.
+  apply H.
+  intros.
+  apply H1.
+  apply H0.
+Qed.
+
+(*
   5. Prove `forall x, x = 0 \/ exists y, S y = x` both manually and using proof
      mode.
 *)
+
+Definition zero_or_successor (x : nat) : x = 0 \/ exists y, S y = x :=
+  match x return x = 0 \/ exists y, S y = x with
+  | O => or_introl (eq_refl 0)
+  | S a => or_intror (ex_intro a (eq_refl (S a)))
+  end.
+
+Goal forall x, x = 0 \/ exists y, S y = x.
+Proof.
+  intros.
+  destruct x.
+  - left.
+    reflexivity.
+  - right.
+    exists x.
+    reflexivity.
+Qed.
