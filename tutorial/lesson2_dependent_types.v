@@ -260,6 +260,8 @@ Print head.
   Let's try it out on a simple example.
 *)
 
+Check head.
+
 Compute head (nonempty true (empty bool)). (* `true` *)
 
 (* By design, we can't take the `head` of an empty vector: *)
@@ -287,3 +289,19 @@ Fail Compute head (empty bool).
      with the contents of the original `Vector` but without the head. It should
      work with any `Vector` as its input, including the empty `Vector`.
 *)
+
+Definition pred n :=
+  match n with
+  | O => O
+  | S p => p
+  end.
+
+Definition tail [T n] (v : Vector T n) : (Vector T (pred n)) :=
+  match v in Vector _ n1 return (Vector T (pred n1)) with
+  | empty _ => empty T
+  | nonempty _ tl => tl
+  end.
+
+Compute tail (empty bool).
+Compute tail (nonempty true (empty bool)).
+Compute tail (nonempty false (nonempty true (empty bool))).
