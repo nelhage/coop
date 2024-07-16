@@ -165,6 +165,20 @@ Fixpoint n_plus_zero_equals_n n : n + 0 = n :=
 
 Check nat_ind.
 
+Check fun p => p + 0 = p.
+
+Definition n_plus_zero_equals_n_ind : forall n : nat, n + 0 = n :=
+  let p_succ : forall (n : nat), (n + 0 = n) -> (S n) + 0 = (S n) :=
+    fun n H =>
+      match H in _ = x return S n + 0 = S x with
+      | eq_refl => eq_refl ((S n) + 0)
+      end
+  in
+  nat_ind (fun p => p + 0 = p) (eq_refl 0) p_succ
+.
+
+Check n_plus_zero_equals_n_ind.
+
 (*
   ```
   forall P : nat -> Prop,
@@ -316,10 +330,52 @@ Qed.
 
 (*
   1. Prove `0 <> 1`.
+*)
+
+Goal 0 <> 1.
+Proof.
+  auto with arith.
+Qed.
+
+Goal 0 <> 1.
+Proof.
+  discriminate.
+Qed.
+
+(*
   2. Prove that addition is associative, i.e.,
      `forall n1 n2 n3, n1 + (n2 + n3) = (n1 + n2) + n3`.
+*)
+
+Theorem addition_assoc : forall n1 n2 n3, n1 + (n2 + n3) = (n1 + n2) + n3.
+Proof.
+  intros.
+  induction n1.
+  - reflexivity.
+  - cbn.
+    f_equal.
+    apply IHn1.
+Qed.
+
+(*
   3. Look up the induction principle for `eq` with `Check eq_ind.`. Informally,
      what does it mean?
+*)
+
+Check eq_ind.
+
+(*
+
+  forall (A : Type) (x : A) (P : A -> Prop), P x -> forall y : A, x =
+  y -> P y
+
+
+   This means that, given some predicate P, if we know (P x), and we
+   know `x = y`, we also know P(y). That is, we can rewrite terms to
+   equal terms inside the arguments of an application.
+*)
+
+(*
   4. Prove the *strong induction* principle for natural numbers:
 
      ```
@@ -331,4 +387,70 @@ Qed.
      Hint: Start the proof with `intros`, then use a tactic called `assert` to
      prove a fact involving `P` and `n`. The goal should easily follow from
      that fact.
+*)
+
+Print "<=".
+
+Goal
+  forall P : nat -> Prop,
+    (forall n1, (forall n2, n2 < n1 -> P n2) -> P n1) -> P O.
+Proof.
+  intros.
+  apply H.
+  intros.
+  unfold "<" in H0.
+  inversion H0.
+Qed.
+
+Theorem nat_ind_strong :
+  forall P : nat -> Prop,
+    (forall n1, (forall n2, n2 < n1 -> P n2) -> P n1) ->
+    forall n, P n.
+Proof.
+  intros.
+  assert (forall n3 : nat, n3 < n -> P n3).
+  - induction n.
+    + intros. inversion H0.
+    + intros.
+      apply (H n) in IHn as Pn.
+      inversion H0.
+      * apply Pn.
+      * clear m H1.
+        unfold "<" in IHn.
+        apply (IHn n3 H2).
+  - apply (H n H0).
+Qed.
+
+
+(*
+In English:
+
+Given:
+  P : nat -> Prop
+  H : forall n1 : nat, (forall n2 : nat, n2 < n1 -> P n2) -> P n1
+  n : nat
+---
+
+First, we prove:
+  (forall n3, n3 < n -> P n3)
+That is, we prove that P holds for all `n3` smaller than `n`.
+
+That proof proceeds by induction on `n`.
+
+- [Base case] For n = 0, there are no smaller `n3`, so the implication
+  is vacuously true.
+
+- [Inductive step] Now we need to show that
+    (forall n3, n3 < n -> P n3)
+  implies
+    (forall n3, n3 < S n -> P n3)
+
+  From the strong inductive hypothesis, we can conclude (P n).
+
+  But that means (from the inductive premise) (P n3) for every `n3 <
+  n`, and also `(P n)`, and so (P n3) for all `n3` <= n.
+
+We now have (forall n3, n3 < n -> P n3), so we just apply the strong
+inductive premise at `n`.
+
 *)
