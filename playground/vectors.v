@@ -78,16 +78,19 @@ Section Definitions.
     reflexivity.
   Qed.
 
+  Lemma Vopp_def' x : -x + x == 0.
+  Proof using Vth.
+    rewrite (Vadd_comm Vth).
+    apply (Vopp_def Vth).
+  Qed.
+
   (* 1.27: Uniqueness of inverse *)
   Lemma Vopp_unique x y : x+y == 0 -> y == - x.
   Proof using Vth.
     intros.
-    apply f_equal with (f := fun z => z  - x) in H.
-    rewrite <- (Vopp_def Vth x) in H.
-    rewrite -> (Vadd_comm Vth x y) in H.
-    repeat rewrite (Vsub_def Vth) in H.
-    rewrite <- (Vadd_assoc Vth) in H.
-    rewrite (Vopp_def Vth) in H.
+    apply f_equal with (f := fun z => - x + z) in H.
+    rewrite -> (Vadd_assoc Vth) in H.
+    rewrite (Vopp_def' x) in H.
     rewrite (Vadd_0_l Vth) in H.
     rewrite (Vadd_0_r) in H.
     apply H.
