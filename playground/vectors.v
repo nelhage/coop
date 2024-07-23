@@ -1,4 +1,4 @@
-Require Import Field_theory.
+Require Import Field_theory Ring_theory.
 
 Section Definitions.
   Variable F : Type.
@@ -47,11 +47,13 @@ Section Definitions.
     Vmul_1_l    : forall x, 1 * x == x;
 
     Vdistr_r    : forall x y z, z * (x + y) == z*x + z*y;
+    Vdistr_l    : forall x y z, (x + y) * z == x*z + y*z;
     Vsub_def    : forall x y, x - y == x + -y;
  }.
 
   Section VectorSpace.
 
+  Variable Fth : field_theory fO fI fadd fmul fsub fopp fdiv finv eq.
   Variable Vth : vector_space_theory.
 
   (* 1.26: Uniqueness of 0 *)
@@ -95,5 +97,34 @@ Section Definitions.
     rewrite (Vadd_0_r) in H.
     apply H.
   Qed.
+
+  Check Radd_0_l (F_R Fth).
+
+  (* 1.30: 0*v = 0 *)
+  Lemma Vscale_0_l v : 0*v == 0.
+  Proof using Vth Fth.
+    pose (eq_refl (0*v)) as H.
+    rewrite <- (Radd_0_l (F_R Fth) 0%field) in H at 1.
+    rewrite (Vdistr_l Vth) in H.
+    apply f_equal with (f := fun z => z + -(0*v)) in H.
+    rewrite <- (Vadd_assoc Vth) in H.
+    rewrite (Vopp_def Vth) in H.
+    rewrite (Vadd_0_r) in H.
+    assumption.
+  Qed.
+
+  (* 1.31: v*0 = 0 *)
+  Lemma Vscale_0_r v : v*0 == 0.
+  Proof using Vth Fth.
+    pose (eq_refl (v*0)) as H.
+    rewrite <- (Vadd_0_l Vth 0) in H at 1.
+    rewrite (Vdistr_r Vth) in H.
+    apply f_equal with (f := fun z => z + -(v*0)) in H.
+    rewrite <- (Vadd_assoc Vth) in H.
+    rewrite (Vopp_def Vth) in H.
+    rewrite (Vadd_0_r) in H.
+    assumption.
+  Qed.
+
   End VectorSpace.
 End Definitions.
