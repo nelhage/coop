@@ -56,15 +56,39 @@ Section Definitions.
   Variable Fth : field_theory fO fI fadd fmul fsub fopp fdiv finv eq.
   Variable Vth : vector_space_theory.
 
+
+  Lemma Vopp_def' x : -x + x == 0.
+  Proof using Vth.
+    rewrite (Vadd_comm Vth).
+    apply (Vopp_def Vth).
+  Qed.
+
+  Ltac vrewrite H :=
+   repeat first
+     [ rewrite (Vadd_0_l Vth) in H
+     | rewrite <- ((Vadd_comm Vth) 0) in H
+     | rewrite (Vmul_1_l Vth) in H
+     (* | rewrite (Vscale_0_l Vth) in H *)
+     | rewrite (Vdistr_l Vth) in H
+     | rewrite (Vopp_def Vth) in H
+     | rewrite Vopp_def' in H
+     | rewrite (Vadd_assoc Vth) in H
+     | match goal with
+       | H : context [ ?x + ?y + (- ?y) ]  |- _ =>
+           rewrite <- (Vadd_assoc Vth x y) in H;
+           rewrite (Vopp_def Vth y) in H
+       end
+     ].
+
   (* 1.26: Uniqueness of 0 *)
   Lemma Vzero_unique x : (forall y, x+y == y) -> x == 0.
   Proof using Vth.
     intros y.
-    set (Vth.(Vadd_0_l) x) as x_plus0_x.
+    pose (Vth.(Vadd_0_l) x) as x_plus0_x.
     rewrite <- x_plus0_x.
     rewrite (Vadd_comm Vth).
     rewrite -> (y 0).
-    reflexivity.
+    easy.
   Qed.
 
   Lemma Vadd_0_r x : x + 0 == x.
@@ -76,14 +100,7 @@ Section Definitions.
   Lemma Vx_sub_x x : x - x = 0.
   Proof using Vth.
     rewrite -> (Vsub_def Vth).
-    rewrite -> (Vopp_def Vth).
-    reflexivity.
-  Qed.
-
-  Lemma Vopp_def' x : -x + x == 0.
-  Proof using Vth.
-    rewrite (Vadd_comm Vth).
-    apply (Vopp_def Vth).
+    now rewrite -> (Vopp_def Vth).
   Qed.
 
   (* 1.27: Uniqueness of inverse *)
@@ -91,26 +108,16 @@ Section Definitions.
   Proof using Vth.
     intros.
     apply f_equal with (f := fun z => - x + z) in H.
-    rewrite -> (Vadd_assoc Vth) in H.
-    rewrite (Vopp_def' x) in H.
-    rewrite (Vadd_0_l Vth) in H.
-    rewrite (Vadd_0_r) in H.
-    apply H.
+    now vrewrite H.
   Qed.
-
-  Check Radd_0_l (F_R Fth).
 
   (* 1.30: 0*v = 0 *)
   Lemma Vscale_0_l v : 0*v == 0.
   Proof using Vth Fth.
     pose (eq_refl (0*v)) as H.
     rewrite <- (Radd_0_l (F_R Fth) 0%field) in H at 1.
-    rewrite (Vdistr_l Vth) in H.
     apply f_equal with (f := fun z => z + -(0*v)) in H.
-    rewrite <- (Vadd_assoc Vth) in H.
-    rewrite (Vopp_def Vth) in H.
-    rewrite (Vadd_0_r) in H.
-    assumption.
+    now vrewrite H.
   Qed.
 
   (* 1.31: v*0 = 0 *)
@@ -118,12 +125,9 @@ Section Definitions.
   Proof using Vth Fth.
     pose (eq_refl (v*0)) as H.
     rewrite <- (Vadd_0_l Vth 0) in H at 1.
-    rewrite (Vdistr_r Vth) in H.
     apply f_equal with (f := fun z => z + -(v*0)) in H.
-    rewrite <- (Vadd_assoc Vth) in H.
-    rewrite (Vopp_def Vth) in H.
-    rewrite (Vadd_0_r) in H.
-    assumption.
+    rewrite (Vdistr_r Vth) in H.
+    now vrewrite H.
   Qed.
 
   End VectorSpace.
