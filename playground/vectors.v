@@ -130,5 +130,13 @@ Section Definitions.
     now vrewrite H.
   Qed.
 
+  (* 1.32: -1*v = -v *)
+  Lemma Vscale_opp v : (-1 % field) * v == -v.
+  Proof.
+    pose (Vscale_0_l v) as H.
+    rewrite <- (Ropp_def (F_R Fth) fI) in H.
+    vrewrite H.
+    now apply Vopp_unique in H.
+  Qed.
   End VectorSpace.
 End Definitions.
